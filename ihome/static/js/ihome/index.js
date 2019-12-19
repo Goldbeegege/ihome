@@ -88,7 +88,6 @@ $(document).ready(function(){
 $.ajax({
     url:"/session",
     success:function(data){
-        console.log(data["data"]["username"])
         if(data["data"]){
             $(".user-info").show()
             $(".register-login").hide();

@@ -74,7 +74,10 @@ body {
 .menu-text {
     display: inline-block;
     width: 63%;
-    margin-left: 10px;
+    font-weight: bold;
+}
+.username {
+    margin-bottom: 10px;
 }
 .menu-text>h3 {
     font-size: 16px;

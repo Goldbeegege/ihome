@@ -5,7 +5,7 @@
 
 from . import api
 from ..utils.captcha import Create_Validation_Code
-from ..utils.commons import encryption
+from ..utils.commons import encryption,login_required
 from ..utils.response_code import RET
 from io import BytesIO
 from flask import current_app,jsonify,request,session,make_response
@@ -208,3 +208,16 @@ def get_login_info():
     else:
         return jsonify(error="用户未登录",msg="0")
 
+@api.route("/logout")
+def logout():
+    session.clear()
+    return jsonify(error="",msg=1)
+
+@api.route("/my_info")
+@login_required
+def my_info():
+    data = {
+        "user_id":session.get("user_id"),
+        "username":session.get("username"),
+    }
+    return jsonify(error="",data=data)
