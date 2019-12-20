@@ -8,14 +8,15 @@ from ..utils.captcha import Create_Validation_Code
 from ..utils.commons import encryption,login_required
 from ..utils.response_code import RET
 from io import BytesIO
-from flask import current_app,jsonify,request,session,make_response
+from flask import current_app,jsonify,request,session,make_response,Response
 from geetest import GeetestLib
 from ihome import db
 from .. import models
 import re
 from ihome.views import constant
 import time
-
+import os
+from hashlib import md5
 
 
 @api.route("/image_code/<string:imageNo>")
@@ -221,3 +222,61 @@ def my_info():
         "username":session.get("username"),
     }
     return jsonify(error="",data=data)
+
+
+@api.route("/change_info",methods=["POST"])
+@login_required
+def change_info():
+    base_dir = current_app.config.get("ROOT")
+    file_obj = request.files.get("avatar")
+    if not file_obj:
+        return jsonify(error="请上传头像",msg=0)
+    md = md5(bytes(file_obj.mimetype, encoding="utf-8"))
+    file_md5 = md.hexdigest()
+    try:
+        user = models.User.query.filter_by(id=session.get("user_id")).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库异常,请稍后再试",msg=0)
+    if not user:
+        return jsonify(error="未知错误",msg=2)
+    if not user.avatar_url or user.avatar_url != file_md5:
+        user.avatar_url = file_md5
+        db.session.commit()
+        if file_md5 not in os.listdir(base_dir):
+            save_image(file_obj,file_md5)
+        try:
+            os.rmdir(os.path.join(base_dir, file_md5))
+        except Exception as e:
+            pass
+        return jsonify(error="",msg=1,data={"file_md5":file_md5})
+    return jsonify(error="", msg=1,data={"file_md5":file_md5})
+
+def save_image(file_obj,file_md5):
+    dir_path = current_app.config.get("ROOT")
+    file_name = os.path.join(dir_path, file_md5)
+    file_obj.save(file_name)
+
+@api.route("/media/<string:file_md5>")
+@login_required
+def media(file_md5):
+    if not file_md5:
+        return jsonify(error="请指定图片名称",msg=0)
+    base_dir = current_app.config.get("ROOT")
+    if file_md5 in os.listdir(base_dir):
+        with open(os.path.join(base_dir,file_md5),"rb") as f:
+            file_obj = f.read()
+        response = Response(file_obj,mimetype="image/*")
+        return response
+    return jsonify(error="图片请求错误",msg=0)
+
+@api.route("/look_up")
+@login_required
+def look_up():
+    username = request.args.get("username")
+    if not username:
+        return jsonify(error="请填写用户名",msg=3)
+    user = models.User.query.filter_by(nick_name=username).first()
+    if user:
+        return jsonify(error="用户名已存在",msg=0)
+    return jsonify(error="",msg=1)

@@ -2,11 +2,12 @@
 # @author: JinFeng
 # @date: 2019/9/26 8:30
 import redis
+import os
 
 
 class BaseConfig(object):
     SECRET_KEY = "jdklj#$@JKjkl%$"
-
+    ROOT = os.path.join(os.getcwd(),"media")
     #关于flask_sqlalchemy的配置
     SQLALCHEMY_DATABASE_URI = "mysql+pymysql://root:jin001@127.0.0.1:3306/ihome?charset=utf8"
     SQLALCHEMY_POOL_SIZE = 10
@@ -16,7 +17,6 @@ class BaseConfig(object):
     #关于flask_session的配置
     SESSION_TYPE = 'redis'
     SESSION_REDIS = redis.Redis(host='127.0.0.1', port='6379')
-
 
 class DevConfig(BaseConfig):
     Debug = True

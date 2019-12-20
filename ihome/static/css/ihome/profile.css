@@ -97,11 +97,18 @@ body {
     line-height: 25px;
     color: #666;
 }
-.error-msg {
-    display: none;
-    font-size: 14px;
-    color: red;
+
+#form-name {
+    margin-left:16px;
 }
-.error-msg i {
-    margin-right: 5px;
+.avatar {
+        height: 80px;
+        width: 80px;
+}
+
+.username-error{
+    color:red
+}
+.mobile-error{
+    color:red;
 }
