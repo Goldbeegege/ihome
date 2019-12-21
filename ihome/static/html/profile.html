@@ -29,7 +29,7 @@
                 <div class="menu-content">
                     <div class="menu-text">
                         <form id="form-avatar" enctype="multipart/form-data">
-                            <label for="avatar"><img id="user-avatar" class="avatar" src="static/images/default.png"
+                            <label for="avatar"><img id="user-avatar" class="avatar" src="/media" onerror="javascript:this.src='/static/images/default.png';"
                                                      alt="头像"></label>
                             <input type="file" name="avatar" id="avatar" style="display:none">
                             <input type="submit" class="btn btn-success submit_img" value="上传">

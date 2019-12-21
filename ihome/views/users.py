@@ -8,7 +8,7 @@ from ..utils.captcha import Create_Validation_Code
 from ..utils.commons import encryption,login_required
 from ..utils.response_code import RET
 from io import BytesIO
-from flask import current_app,jsonify,request,session,make_response,Response
+from flask import current_app,jsonify,request,session,make_response,Response,g
 from geetest import GeetestLib
 from ihome import db
 from .. import models
@@ -182,7 +182,8 @@ def signup():
     if not user:
         return jsonify(error="用户名或密码错误",msg="0")
     session["user_id"] = user.id
-    session["username"] = user.nick_name 
+    session["username"] = user.nick_name
+    session["file_md5"] = user.avatar_url if user.avatar_url else ""
     response = make_response(jsonify(error="",msg=""))
     return response 
 
@@ -224,44 +225,41 @@ def my_info():
     return jsonify(error="",data=data)
 
 
-@api.route("/change_info",methods=["POST"])
+@api.route("/upload_avatar",methods=["POST"])
 @login_required
-def change_info():
+def upload_avatar():
     base_dir = current_app.config.get("ROOT")
     file_obj = request.files.get("avatar")
     if not file_obj:
         return jsonify(error="请上传头像",msg=0)
-    md = md5(bytes(file_obj.mimetype, encoding="utf-8"))
+    content = file_obj.read()
+    md = md5(content)
     file_md5 = md.hexdigest()
-    try:
-        user = models.User.query.filter_by(id=session.get("user_id")).first()
-    except Exception as e:
-        current_app.logger.error(e)
-        return jsonify(error="数据库异常,请稍后再试",msg=0)
-    if not user:
-        return jsonify(error="未知错误",msg=2)
-    if not user.avatar_url or user.avatar_url != file_md5:
-        user.avatar_url = file_md5
-        db.session.commit()
+    file_md5 = file_md5 +"."+ file_obj.filename.rsplit(".",1)[1]
+    user_avatar_md5 = session.get(file_md5)
+    if not user_avatar_md5 or user_avatar_md5 != file_md5:
+        try:
+            models.User.query.filter_by(id=session.get("user_id")).update({"avatar_url":file_md5})
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(error="数据库异常,请稍后再试",msg=0)
         if file_md5 not in os.listdir(base_dir):
-            save_image(file_obj,file_md5)
+            with open(os.path.join(base_dir, file_md5),"wb") as f:
+                f.write(content)
         try:
             os.rmdir(os.path.join(base_dir, file_md5))
         except Exception as e:
             pass
-        return jsonify(error="",msg=1,data={"file_md5":file_md5})
+    session["file_md5"] = file_md5
     return jsonify(error="", msg=1,data={"file_md5":file_md5})
 
-def save_image(file_obj,file_md5):
-    dir_path = current_app.config.get("ROOT")
-    file_name = os.path.join(dir_path, file_md5)
-    file_obj.save(file_name)
-
-@api.route("/media/<string:file_md5>")
+@api.route("/media")
 @login_required
-def media(file_md5):
+def media():
+    file_md5 = session.get("file_md5")
     if not file_md5:
-        return jsonify(error="请指定图片名称",msg=0)
+        return jsonify(error="该用户未传头像",msg=1)
     base_dir = current_app.config.get("ROOT")
     if file_md5 in os.listdir(base_dir):
         with open(os.path.join(base_dir,file_md5),"rb") as f:

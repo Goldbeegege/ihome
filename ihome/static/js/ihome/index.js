@@ -91,7 +91,7 @@ $.ajax({
         if(data["data"]){
             $(".user-info").show()
             $(".register-login").hide();
-            $(".user-name").attr("href","/my?"+"user_id="+data["data"]["user_id"])
+            $(".user-name").attr("href","/my")
         }
     }
 })

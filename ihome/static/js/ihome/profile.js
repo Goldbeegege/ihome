@@ -19,14 +19,14 @@ $(function(){
            return
        }
        $("#form-avatar").ajaxSubmit({
-           url:"/change_info",
+           url:"/upload_avatar",
            type:"post",
            headers:{
                "X-CSRFtoken":getCookie("csrf_token")
            },
            success:function(ret){
                if (ret.msg === 1){
-                   $("#user-avatar").attr("src","/media/"+ret.data.file_md5);
+                   $("#user-avatar").attr("src","/media");
                    alert("上传成功");
                    $(".submit_img").attr("disabled","disabled")
                }else{

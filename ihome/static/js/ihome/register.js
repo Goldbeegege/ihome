@@ -216,7 +216,7 @@ var handlerPopup = function (captchaObj) {
                     if (data["error"]) {
                         showErrorMsg(data)
                     } else {
-                        location.href = "/index/"
+                        location.href = "/login"
                     }
                 }
             });
