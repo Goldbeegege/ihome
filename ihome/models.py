@@ -23,6 +23,7 @@ class User(BaseModel,db.Model):
     avatar_url = db.Column(db.String(128))  # 用户头像路径
     houses = db.relationship("House", backref="user")  # 用户发布的房屋
     orders = db.relationship("Order", backref="user")  # 用户下的订单
+    mobile = db.Column(db.Integer,default=0)
 
 class District(BaseModel,db.Model):
     """城区"""

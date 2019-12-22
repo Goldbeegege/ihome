@@ -12,6 +12,7 @@ function getCookie(name) {
 }
 
 $(function(){
+    $(".submit_img").attr("disabled","disabled");
     $("#form-avatar").submit(function(e){
        e.preventDefault();
        if (!$("input[name='avatar']").val()){
@@ -30,7 +31,7 @@ $(function(){
                    alert("上传成功");
                    $(".submit_img").attr("disabled","disabled")
                }else{
-                   alert("请选择图片")
+                   alert(ret.error)
                }
            }
        })
@@ -45,12 +46,53 @@ $(function(){
         }
     });
 
-    $(".save").click(function(){
-        if (!$("#usrname").val() && !$("#mobile").val()){
-            return;
-        }else{
-            $.ajax(
-            )
+    $("#username-change").click(function(e){
+        e.preventDefault();
+        let usernameTag= $("#username");
+        usernameTag.removeAttr("readonly");
+        let that = this;
+        if (usernameTag.hasClass("changed")){
+            $.ajax({
+                url:"/change_info?username=" + usernameTag.val(),
+                success:function(ret){
+                    if (!ret.error) {
+                        usernameTag.attr("readonly", "readonly").removeClass("changed").addClass("unchanged");
+                        $(that).html("修改");
+                        alert("修改成功！")
+                    }else{
+                        $(".username-error").show().children("span").html(ret.error)
+                    }
+                }
+            })
         }
+
     });
+    $("#username").change(function(){
+       $("#username-change").html("保存");
+       $(this).removeClass("unchanged").addClass("changed");
+    });
+
+    $.ajax({
+        url:"/my_info",
+        type:"get",
+        success:function(ret){
+            if (ret.msg === 1){
+                let username = ret.data.username;
+                let mobile = ret.data.mobile;
+                $("#username").val(username);
+                if (mobile){
+                    $("#mobile").attr("readonly","readonly").next().attr("disabled","disabled");
+                }
+            }
+        }
+    })
+
+    // $(".save").click(function(){
+    //     if (!$("#usrname").val() && !$("#mobile").val()){
+    //         return;
+    //     }else{
+    //         $.ajax(
+    //         )
+    //     }
+    // });
 });

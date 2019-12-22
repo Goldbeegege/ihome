@@ -112,3 +112,7 @@ body {
 .mobile-error{
     color:red;
 }
+.form-control{
+    display:inline-block;
+    width:70%;
+}

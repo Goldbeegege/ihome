@@ -8,7 +8,7 @@ from ..utils.captcha import Create_Validation_Code
 from ..utils.commons import encryption,login_required
 from ..utils.response_code import RET
 from io import BytesIO
-from flask import current_app,jsonify,request,session,make_response,Response,g
+from flask import current_app,jsonify,request,session,make_response,Response
 from geetest import GeetestLib
 from ihome import db
 from .. import models
@@ -113,7 +113,7 @@ def pcajax_validate():
         
         #逐步校验用户名和密码格式是否正确
         val = ValideInfo(**{"username": username, "password": password})
-        ret = val.is_valide()
+        ret = val.validate()
         if ret.get("error"):
             return ret
         #在通过参数校验后，加密密码，将该用户信息写入数据库
@@ -133,9 +133,9 @@ class ValideInfo(object):
     """
     def __init__(self,**kwargs):
         self.arguments = kwargs
-        self.ret = {"error":None,"msg":None}
+        self.ret = {"error":"","msg":""}
     
-    def is_valide(self):
+    def validate(self):
         """
         将要校验的参数获取到通过反射的方式逐个验证
         这种方式模仿Django中的钩子函数，方便以后添加参数时的扩展
@@ -157,9 +157,19 @@ class ValideInfo(object):
             self.ret["msg"] = "username"
             return self.ret
         user = models.User.query.filter_by(nick_name=value).first()
-        if user:
-            self.ret["error"] = "用户名已存在"
-            self.ret["msg"] = "username"
+        if not user:
+            return self.ret
+        #已查询到记录，需要校验该条记录是否属于该用户本身
+        username = session.get("username")
+        if username:
+            if user.nick_name == value and value != username:
+                self.ret["error"] = "用户名已存在"
+                self.ret["msg"] = "username"
+                return self.ret
+            return self.ret
+        #注册时查询到了user记录表示该用户名已经存在
+        self.ret["error"] = "用户名已存在"
+        self.ret["msg"] = "username"
         return self.ret
 
     def valide_password(self,value):
@@ -184,20 +194,19 @@ def signup():
     session["user_id"] = user.id
     session["username"] = user.nick_name
     session["file_md5"] = user.avatar_url if user.avatar_url else ""
+    session["mobile"] = user.mobile
     response = make_response(jsonify(error="",msg=""))
     return response 
 
-
-def control_request_times(ip):
-    request_times = session.get("frequency_times_%s"%ip)
+def control_request_times(value,interval=constant.TIME_SPAN,times=constant.TIMES):
+    ctime = time.time()
+    request_times = session.get("frequency_times_%s"%value)
     if request_times is None:
-        session["frequency_times_%s"%ip] = [time.time()]
-    elif len(request_times) < 5:
-        session["frequency_times_%s"%ip].insert(0,time.time())
+        session["frequency_times_%s"%value] = [ctime]
+    elif len(request_times) < times:
+        session["frequency_times_%s"%value].insert(0,ctime)
     else:
-        ctime = time.time()
-        if ctime - request_times[-1] < 60:
-            print(60-(ctime-request_times[-1]))
+        if ctime - request_times[-1] < interval:
             return False
         request_times.pop()
         request_times.insert(0,ctime)
@@ -221,17 +230,20 @@ def my_info():
     data = {
         "user_id":session.get("user_id"),
         "username":session.get("username"),
+        "mobile": session["mobile"]
     }
-    return jsonify(error="",data=data)
+    return jsonify(error="",data=data,msg=1)
 
 
 @api.route("/upload_avatar",methods=["POST"])
 @login_required
 def upload_avatar():
+    if not control_request_times(session["user_id"],interval=60,times=3):
+        return jsonify(error="上传次数过于频繁，请稍后再试",msg=0)
     base_dir = current_app.config.get("ROOT")
     file_obj = request.files.get("avatar")
     if not file_obj:
-        return jsonify(error="请上传头像",msg=0)
+        return jsonify(error="请上传图片",msg=0)
     content = file_obj.read()
     md = md5(content)
     file_md5 = md.hexdigest()
@@ -252,6 +264,8 @@ def upload_avatar():
         except Exception as e:
             pass
     session["file_md5"] = file_md5
+    redis = current_app.config["SESSION_REDIS"]
+    redis.incr("avatar_upload_time")
     return jsonify(error="", msg=1,data={"file_md5":file_md5})
 
 @api.route("/media")
@@ -268,13 +282,19 @@ def media():
         return response
     return jsonify(error="图片请求错误",msg=0)
 
-@api.route("/look_up")
+@api.route("/change_info")
 @login_required
-def look_up():
+def change_info():
     username = request.args.get("username")
-    if not username:
-        return jsonify(error="请填写用户名",msg=3)
-    user = models.User.query.filter_by(nick_name=username).first()
-    if user:
-        return jsonify(error="用户名已存在",msg=0)
+    val = ValideInfo(username=username)
+    ret = val.validate()
+    if ret.get("error"):
+        return ret
+    try:
+        models.User.query.filter_by(id=session["user_id"]).update({"nick_name":username})
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库异常，请稍后重试",msg=0)
+    session["username"] = username
     return jsonify(error="",msg=1)
