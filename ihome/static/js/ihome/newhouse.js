@@ -4,6 +4,15 @@ function getCookie(name) {
 }
 
 $(document).ready(function(){
-    // $('.popup_con').fadeIn('fast');
-    // $('.popup_con').fadeOut('fast');
-})
+    $.ajax({
+        url:"/area_info",
+        success:function(ret){
+            $("#area-id").empty();
+            let data = ret.data;
+            for(let area_id in data){
+                let option = $("<option value='" + data[area_id].id +"'>"+ data[area_id].name+"</option>");
+                $(option).appendTo("#area-id");
+            }
+        }
+    })
+});

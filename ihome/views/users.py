@@ -17,6 +17,7 @@ from ihome.views import constant
 import time
 import os
 from hashlib import md5
+import json
 
 
 @api.route("/image_code/<string:imageNo>")
@@ -178,6 +179,27 @@ class ValideInfo(object):
             self.ret["msg"] = "password"
         return self.ret
 
+    def valide_mobile(self,value):
+        if not re.search(r"1[3578]\d{9}",value):
+            self.ret["error"] = "非法手机号码"
+            self.ret["msg"] = "mobile"
+            return self.ret
+        return self.ret
+
+    def valide_id_card(self,value):
+        if re.search(r"^[1-9]\d{5}(18|19|20|(3\d))\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\d{3}[0-9Xx]$",value):
+            return self.ret
+        self.ret["error"] = "非法身份证号"
+        self.ret["msg"] = "id-card"
+        return self.ret
+
+    def valide_real_name(self,value):
+        if re.match(r"^[\u4e00-\u9fa5][\u4e00-\u9fa5]*[\u4e00-\u9fa5]$",value):
+            return self.ret
+        self.ret["error"] = "名字好奇怪"
+        self.ret["msg"] = "real-name"
+        return self.ret
+
 @api.route("/session",methods=["POST"])
 def signup():
     username = request.get_json().get("username")
@@ -194,7 +216,11 @@ def signup():
     session["user_id"] = user.id
     session["username"] = user.nick_name
     session["file_md5"] = user.avatar_url if user.avatar_url else ""
-    session["mobile"] = user.mobile
+    session["mobile"] = user.mobile_num
+    if user.real_name and user.id_card:
+        session["is_auth"] = True
+    else:
+        session["is_auth"] = False
     response = make_response(jsonify(error="",msg=""))
     return response 
 
@@ -282,9 +308,15 @@ def media():
         return response
     return jsonify(error="图片请求错误",msg=0)
 
-@api.route("/change_info")
+@api.route("/change_username")
 @login_required
-def change_info():
+def change_username():
+    redis = current_app.config.get("SESSION_REDIS")
+    try:
+        if redis.get("%s_usename_chage"%session["user_id"]):
+            return jsonify(error="七天内只能修改一次用户名",msg=0)
+    except Exception as e:
+        current_app.logger.error(e)
     username = request.args.get("username")
     val = ValideInfo(username=username)
     ret = val.validate()
@@ -297,4 +329,84 @@ def change_info():
         current_app.logger.error(e)
         return jsonify(error="数据库异常，请稍后重试",msg=0)
     session["username"] = username
+    try:
+        redis.setex("%s_usename_chage"%session["user_id"],constant.USERNAME_EXPIRE_TIME,0)
+    except Exception as e:
+        current_app.logger.error(e)
     return jsonify(error="",msg=1)
+
+@api.route("/change_mobile")
+@login_required
+def change_mobile():
+    if session.get("mobile"):
+        return jsonify(error="不予许随意更改手机号码",msg=0)
+    mobile = request.args.get("mobile")
+    val = ValideInfo(mobile=mobile)
+    ret = val.validate()
+    if ret.get("error"):
+        return ret
+    try:
+        models.User.query.filter_by(id=session["user_id"]).update({"mobile_num":mobile})
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库异常，请稍后重试",msg=0)
+    session["mobile"] = mobile
+    return jsonify(error="",msg=1)
+
+@api.route("/auth",methods=["POST"])
+@login_required
+def auth():
+    real_name = request.form.get("real_name")
+    id_card = request.form.get("id_card")
+    if not all([real_name,id_card]):
+        return  jsonify(error="参数不完整",msg="all")
+    val = ValideInfo(real_name=real_name,id_card=id_card)
+    ret = val.validate()
+    if ret.get("error"):
+        return ret
+    try:
+        user = models.User.query.filter_by(id=session["user_id"],real_name=None,id_card=None).first()
+    except Exception as e:
+        current_app.logger.error(e)
+    else:
+        if user:
+            user.real_name = real_name
+            user.id_card = id_card
+            db.session.commit()
+            session["is_auth"] = True
+            return jsonify(error="",msg=1)
+        return jsonify(error="实名认证成功，不予许随意改动")
+    return jsonify(error="数据异常，请稍后再试",msg=0)
+
+@api.route("/init_auth")
+@login_required
+def init_auth():
+    redis = current_app.config.get("SESSION_REDIS")
+    try:
+        user_auth =  redis.get("%s_auth"%session["username"])
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库错误",msg=0)
+    else:
+        if user_auth:
+            data = json.loads(user_auth)
+            return jsonify(error="",msg=1,data =data)
+        try:
+            user = models.User.query.filter_by(id=session["user_id"]).first()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(error="数据库错误",msg=0)
+        else:
+            ret = {"msg":1,"error":""}
+            if user.id_card and user.real_name:
+                data = {
+                    "id_card":user.id_card,
+                    "real_name":user.real_name
+                }
+                try:
+                    redis.setex("%s_auth"%session["username"],30*60,json.dumps(data))
+                except Exception as e:
+                    current_app.logger.error(e)
+                ret["data"] = data
+            return json.dumps(ret)

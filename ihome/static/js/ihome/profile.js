@@ -53,11 +53,10 @@ $(function(){
         let that = this;
         if (usernameTag.hasClass("changed")){
             $.ajax({
-                url:"/change_info?username=" + usernameTag.val(),
+                url:"/change_username?username=" + usernameTag.val(),
                 success:function(ret){
                     if (!ret.error) {
                         usernameTag.attr("readonly", "readonly").removeClass("changed").addClass("unchanged");
-                        $(that).html("修改");
                         alert("修改成功！")
                     }else{
                         $(".username-error").show().children("span").html(ret.error)
@@ -67,8 +66,28 @@ $(function(){
         }
 
     });
+    $("#mobile-change").click(function(e){
+        e.preventDefault();
+        let mobileTag = $("#mobile");
+        let reg = /1[3578]\d{9}/;
+        let that = this;
+        if(reg.test(mobileTag.val())){
+            $.ajax({
+                url:"/change_mobile?mobile="+mobileTag.val(),
+                success:function(ret){
+                    if(!ret.error){
+                        mobileTag.attr("readonly","readonly");
+                        $(that).attr("disabled","disabled");
+                    }else{
+                        $(".mobile-error").show().children("span").html(ret.error)
+                    }
+                }
+            })
+        }else{
+            alert("非法手机号");
+        }
+    });
     $("#username").change(function(){
-       $("#username-change").html("保存");
        $(this).removeClass("unchanged").addClass("changed");
     });
 
@@ -81,18 +100,13 @@ $(function(){
                 let mobile = ret.data.mobile;
                 $("#username").val(username);
                 if (mobile){
-                    $("#mobile").attr("readonly","readonly").next().attr("disabled","disabled");
+                    $("#mobile").next().attr("disabled","disabled").prev().remove();
+                    let mobileTag = $("<p id='mobile' class='form-control-static' style='display: inline-block;margin-left:5px;width:70%'></p>");
+                    mobileTag.html(mobile);
+                    $(mobileTag).insertBefore("#mobile-change")
                 }
             }
         }
     })
 
-    // $(".save").click(function(){
-    //     if (!$("#usrname").val() && !$("#mobile").val()){
-    //         return;
-    //     }else{
-    //         $.ajax(
-    //         )
-    //     }
-    // });
 });

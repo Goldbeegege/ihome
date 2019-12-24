@@ -20,3 +20,6 @@ FREQUENCY_INTERVAL_TIME = 180
 TIME_SPAN = 60
 #次数：
 TIMES = 5
+
+#修改一次用户名,7天之后才能再次修改,单位：秒
+USERNAME_EXPIRE_TIME = 60*60*24*7
