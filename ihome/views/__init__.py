@@ -12,4 +12,4 @@ from .. import models
 
 api = Blueprint("api",__name__)
 
-from . import users
+from . import users, house

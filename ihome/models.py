@@ -18,12 +18,13 @@ class User(BaseModel,db.Model):
     id = db.Column(db.Integer,primary_key=True) #用户编号
     nick_name = db.Column(db.String(32),unique=True,nullable=False) #用户昵称
     password_hash = db.Column(db.String(128),nullable=False) #用户密码，密文
+    mobile_num = db.Column(db.String(11), default="")
     real_name = db.Column(db.String(32))  # 真实姓名
     id_card = db.Column(db.String(20))  # 身份证号
     avatar_url = db.Column(db.String(128))  # 用户头像路径
     houses = db.relationship("House", backref="user")  # 用户发布的房屋
     orders = db.relationship("Order", backref="user")  # 用户下的订单
-    mobile = db.Column(db.Integer,default=0)
+
 
 class District(BaseModel,db.Model):
     """城区"""
@@ -32,6 +33,12 @@ class District(BaseModel,db.Model):
     id = db.Column(db.Integer, primary_key=True)  # 区域编号
     name = db.Column(db.String(32), nullable=False)  # 区域名字
     houses = db.relationship("House", backref="area")  # 区域的房屋
+
+    def to_dict(self):
+        return {
+            "id":self.id,
+            "name":self.name
+        }
 
 house_facility = db.Table(
     "ihome_house_facility",

@@ -1,3 +1,13 @@
 $(document).ready(function(){
-    $(".auth-warn").show();
-})
+    $.ajax({
+        url:"/my_house",
+        success:function(ret){
+            if (ret.error){
+                $(".auth-warn").show();
+            }else{
+                $(".auth-warn").hide();
+            }
+        }
+    });
+    
+});
