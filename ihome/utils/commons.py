@@ -3,8 +3,9 @@
 # @Author: JinFeng 
 # @Date: 2019-12-10 20:29:20 
 import hashlib
-from flask import current_app,session,jsonify
+from flask import current_app,session,jsonify,request
 from functools import wraps
+from hashlib import md5
 
 def encryption(password):
     secret_key = current_app.config.get("SECRET_KEY")

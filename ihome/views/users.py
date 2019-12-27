@@ -82,12 +82,13 @@ def pcajax_validate():
         #获取注册有需要的参数
         password = request.form.get("password")
         password2 = request.form.get("password2")
+        mobile_num = request.form.get("mobile")
         imageId = request.form.get("imageId")
         imagecode = request.form.get("imagecode")
         username = request.form.get("username")
 
         #校验参数的完整性
-        if not all([password,password2,imagecode,imageId,user_id]):
+        if not all([password,password2,imagecode,imageId,user_id,mobile_num]):
             ret["error"] = "请将个人信息填写完整"
             ret["msg"] = "all"
             return jsonify(ret)
@@ -113,13 +114,13 @@ def pcajax_validate():
             return ret          
         
         #逐步校验用户名和密码格式是否正确
-        val = ValideInfo(**{"username": username, "password": password})
+        val = ValideInfo(**{"username": username, "password": password,"mobile":mobile_num})
         ret = val.validate()
         if ret.get("error"):
             return ret
         #在通过参数校验后，加密密码，将该用户信息写入数据库
         password = encryption(password)
-        user_obj = models.User(nick_name=username,password_hash=password)
+        user_obj = models.User(nick_name=username,password_hash=password,mobile_num=mobile_num)
         db.session.add(user_obj)
         #改变数据库的操作需要进行提交
         db.session.commit()

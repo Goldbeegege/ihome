@@ -69,14 +69,14 @@
             <div class="form-group form-group-lg">
                 <div class="input-group">
                     <div class="input-group-addon"><i class="fa fa-user fa-lg fa-fw"></i></div>
-                    <input type="text" class="form-control" name="username" id="username" placeholder="用户名" required>
+                    <input autocomplete="off" type="text" class="form-control" name="username" id="username" placeholder="用户名" required>
                 </div>
             </div>
             <div class="error-msg" id="username-err"><i class="fa fa-exclamation-circle"></i><span></span></div>
             <div class="form-group form-group-lg">
                 <div class="input-group">
                     <div class="input-group-addon"><i class="fa fa-image fa-lg fa-fw"></i></div>
-                    <input type="text" class="form-control" name="imagecode" id="imagecode" placeholder="图片验证码" required>
+                    <input autocomplete="off" type="text" class="form-control" name="imagecode" id="imagecode" placeholder="图片验证码" required>
                     <div class="input-group-addon image-code" onclick="generateImageCode();"><img src="/image_code/fgjklad"></div>
                 </div>
             </div>
@@ -84,17 +84,24 @@
             <div class="form-group form-group-lg">
                 <div class="input-group">
                     <div class="input-group-addon"><i class="fa fa-lock fa-lg fa-fw"></i></div>
-                    <input type="password" class="form-control" name="password" id="password" placeholder="密码" required>
+                    <input autocomplete="off" type="password" class="form-control" name="password" id="password" placeholder="密码" required>
                 </div>
             </div>
             <div class="error-msg" id="password-err"><i class="fa fa-exclamation-circle"></i><span></span></div>
             <div class="form-group form-group-lg">
                 <div class="input-group">
                     <div class="input-group-addon"><i class="fa fa-lock fa-lg fa-fw"></i></div>
-                    <input type="password" class="form-control" name="password2" id="password2" placeholder="确认密码" required>
+                    <input autocomplete="off" type="password" class="form-control" name="password2" id="password2" placeholder="确认密码" required>
                 </div>
             </div>
             <div class="error-msg" id="password2-err"><i class="fa fa-exclamation-circle"></i><span></span></div>
+            <div class="form-group form-group-lg">
+                <div class="input-group">
+                    <div class="input-group-addon"><i class="fa fa-mobile fa-2x fa-fw"></i></div>
+                    <input type="text" class="form-control" name="mobile" id="mobile" placeholder="手机号码" required autocomplete="off">
+                </div>
+            </div>
+            <div class="error-msg" id="mobile-err"><i class="fa fa-exclamation-circle"></i><span></span></div>
             <button type="submit" class="btn btn-lg btn-theme btn-block" id="popup-submit" >立即注册</button>
             <div id="popup-captcha"></div>
         </form>

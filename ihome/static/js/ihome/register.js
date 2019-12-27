@@ -33,96 +33,90 @@ $(document).ready(function() {
     generateImageCode();
     $("#username").blur(function(){
         valide_username($("#username").val())
-    });
-    $("#imagecode").blur(function () {
-        valide_imagecode($("#imagecode").val())
-    });
-    $("#password").blur(function () {
-        valide_password($("#password").val())
-    });
-    $("#password2").blur(function () {
-        valide_password2($("#password2").val())
-    });
-
-    $("#username").focus(function(){
+    }).focus(function(){
         $(this).parent().removeClass("has-error");
         $("#username-err").hide();
     });
-    $("#imagecode").focus(function(){
+    $("#imagecode").blur(function () {
+        valide_imagecode($("#imagecode").val())
+    }).focus(function(){
         $(this).parent().removeClass("has-error");
         $("#imagecode-err").hide();
     });
-    $("#password").focus(function(){
+    $("#password").blur(function () {
+        valide_password($("#password").val())
+    }).focus(function(){
         $(this).parent().removeClass("has-error");
         $("#password-err").hide();
     });
-    $("#password2").focus(function(){
+    $("#password2").blur(function () {
+        valide_password2($("#password2").val())
+    }).focus(function(){
         $(this).parent().removeClass("has-error");
         $("#password2-err").hide();
     });
-
+    $("#mobile").blur(function () {
+        valide_mobile($("#mobile").val())
+    }).focus(function(){
+        $(this).parent().removeClass("has-error");
+        $("#mobile-err").hide();
+    });
 
     // 为表单的提交补充自定义的函数行为 （提交事件e）
     $(".form-register").submit(function(e){
         // 阻止浏览器对于表单的默认自动提交行为
         e.preventDefault();
 
-        var mobile = $("#mobile").val();
-        var passwd = $("#password").val();
-        var passwd2 = $("#password2").val();
-        if (!mobile) {
-            $("#mobile-err span").html("请填写正确的手机号！");
-            $("#mobile-err").show();
-            return;
-        } 
-        // if (!phoneCode) {
-        //     $("#phone-code-err span").html("请填写短信验证码！");
-        //     $("#phone-code-err").show();
+        // var mobile = $("#mobile").val();
+        // var passwd = $("#password").val();
+        // var passwd2 = $("#password2").val();
+        // if (!mobile) {
+        //     $("#mobile-err span").html("请填写正确的手机号！");
+        //     $("#mobile-err").show();
         //     return;
         // }
-        if (!passwd) {
-            $("#password-err span").html("请填写密码!");
-            $("#password-err").show();
-            return;
-        }
-        if (passwd != passwd2) {
-            $("#password2-err span").html("两次密码不一致!");
-            $("#password2-err").show();
-            return;
-        }
+        // if (!passwd) {
+        //     $("#password-err span").html("请填写密码!");
+        //     $("#password-err").show();
+        //     return;
+        // }
+        // if (passwd !== passwd2) {
+        //     $("#password2-err span").html("两次密码不一致!");
+        //     $("#password2-err").show();
+        //     return;
+        // }
 
         // 调用ajax向后端发送注册请求
-        var req_data = {
-            mobile: mobile,
-            // sms_code: phoneCode,
-            password: passwd,
-            password2: passwd2,
-        };
-        var req_json = JSON.stringify(req_data);
-        $.ajax({
-            url: "/api/v1.0/users",
-            type: "post",
-            data: req_json,
-            contentType: "application/json",
-            dataType: "json",
-            headers: {
-                "X-CSRFToken": getCookie("csrf_token")
-            }, // 请求头，将csrf_token值放到请求中，方便后端csrf进行验证
-            success: function (resp) {
-                if (resp.errno == "0") {
-                    // 注册成功，跳转到主页
-                    location.href = "/index.html";
-                } else {
-                    alert(resp.errmsg);
-                }
-            }
-        })
+        // var req_data = {
+        //     mobile: mobile,
+        //     password: passwd,
+        //     password2: passwd2,
+        // };
+        // var req_json = JSON.stringify(req_data);
+        // $.ajax({
+        //     url: "/api/v1.0/users",
+        //     type: "post",
+        //     data: req_json,
+        //     contentType: "application/json",
+        //     dataType: "json",
+        //     headers: {
+        //         "X-CSRFToken": getCookie("csrf_token")
+        //     }, // 请求头，将csrf_token值放到请求中，方便后端csrf进行验证
+        //     success: function (resp) {
+        //         if (resp.errno === "0") {
+        //             // 注册成功，跳转到主页
+        //             location.href = "/index.html";
+        //         } else {
+        //             alert(resp.errmsg);
+        //         }
+        //     }
+        // })
 
     });
 });
 
 let showErrorMsg = function(data){
-    if (data["msg"] == "all"){
+    if (data["msg"] === "all"){
         $("#username-err").show().children("span").html(data["error"]);
         return;
     }
@@ -131,35 +125,45 @@ let showErrorMsg = function(data){
     $(tag_id).show().children("span").html(data["error"]);
     $("#imagecode").val("");
     generateImageCode()
-}
+};
 
-
+let isUsername = false;
+let isPassword = false;
+let isPassword2 = false;
+let isImagecode = false;
+let isMobile = false;
 
 let valide_username = function (username){
-    if (username.length == 0){
-        error_info("username","请创建用户名")
+    if (username.length === 0){
+        error_info("username","请创建用户名");
+        isUsername = false;
         return false;
     }
     let reg = /[0-9a-zA-Z_]{6,12}/;
     let ret = reg.test(username);
     if(!ret){
         error_info("username","用户名由数字字母或下划线组成，长度为6-12个字符");
+        isUsername = false;
         return false;
     }
+    isUsername = true;
     return true
-}
+};
 
 let valide_imagecode = function(imagecode){
-    if (imagecode.length == 0){
+    if (imagecode.length === 0){
         error_info("imagecode", "请输入验证码");
+        isImagecode = false;
         return false;
     }
+    isImagecode = true;
     return true;
-}
+};
 
 let valide_password = function(password){
-    if (password.length == 0){
-        error_info("password","请输入密码")
+    if (password.length === 0){
+        error_info("password","请输入密码");
+        isPassword = false;
         return false;        
     }
     let reg = /.{8,16}/;
@@ -167,62 +171,83 @@ let valide_password = function(password){
     let ret = reg.test($("#password").val());
     if (!ret){
         error_info("password", "密码长度为8-16个字符");
+        isPassword = false;
         return false;
-    };
+    }
+    isPassword = true;
     return true;
-}
+};
 
 let valide_password2 = function(password2){
-    if (password2.length == 0){
+    if (password2.length === 0){
         error_info("password2", "请确认密码");
+        isPassword2 = false;
         return false;
     }
-    if (password2 != $("#password").val()){
+    if (password2 !== $("#password").val()){
         error_info("password2","两次密码输入不一致");
+        isPassword2 = false;
         return false;
     }
+    isPassword2 = true;
     return true;
-}
+};
+
+let valide_mobile = function(mobile){
+    let reg = /1[3578]\d{9}/;
+    if(reg.test(mobile)){
+        isMobile = true;
+        return true
+    }
+    error_info("mobile","请输入正确手机号码");
+    isMobile = false;
+    return false;
+};
 
 let error_info = function(tag,msg){
     $("#" + tag).parent().addClass("has-error");
     let error_tag = "#" + tag +"-err";
     $(error_tag).show().children("span").html(msg);
-}
+};
 
 var handlerPopup = function (captchaObj) {
         // 成功的回调
         captchaObj.onSuccess(function () {
-            var validate = captchaObj.getValidate();
-            console.log($("#username").val())
-            $.ajax({
-                url: "/pc-geetest/ajax_validate", // 进行二次验证
-                type: "post",
-                dataType: "json",
-                data: {
-                    geetest_challenge: validate.geetest_challenge,
-                    geetest_validate: validate.geetest_validate,
-                    geetest_seccode: validate.geetest_seccode,
-                    username:$("#username").val(),
-                    password:$("#password").val(),
-                    password2: $("#password2").val(),
-                    imagecode:$("#imagecode").val(),
-                    imageId:imageCodeId
-                },
-                headers: {
-                    "X-CSRFToken": getCookie("csrf_token")
-                },
-                success: function (data) {
-                    if (data["error"]) {
-                        showErrorMsg(data)
-                    } else {
-                        location.href = "/login"
+            if (isUsername && isPassword2 && isPassword && isMobile && isImagecode){
+                var validate = captchaObj.getValidate();
+                $.ajax({
+                    url: "/pc-geetest/ajax_validate", // 进行二次验证
+                    type: "post",
+                    dataType: "json",
+                    data: {
+                        geetest_challenge: validate.geetest_challenge,
+                        geetest_validate: validate.geetest_validate,
+                        geetest_seccode: validate.geetest_seccode,
+                        username:$("#username").val(),
+                        password:$("#password").val(),
+                        password2: $("#password2").val(),
+                        imagecode:$("#imagecode").val(),
+                        mobile:$("#mobile").val(),
+                        imageId:imageCodeId
+                    },
+                    headers: {
+                        "X-CSRFToken": getCookie("csrf_token")
+                    },
+                    success: function (data) {
+                        if (data["error"]) {
+                            showErrorMsg(data)
+                        } else {
+                            location.href = "/login"
+                        }
                     }
-                }
-            });
+                });
+            }
         });
         $("#popup-submit").click(function () {
-            captchaObj.show();
+            if (isUsername && isPassword2 && isPassword && isMobile && isImagecode){
+                captchaObj.show();
+            }
+            return
         });
         // 将验证码加到id为popup-captcha的元素里
         captchaObj.appendTo("#popup-captcha");

@@ -98,11 +98,24 @@ body {
 .popup{width:300px;height:150px;position:fixed;
     left:50%;
     margin-left:-150px;
-    top:50%;
+    top:20%;
     margin-top:-75px;
     z-index:1000;
 }
 
 .popup p{height:150px;line-height:150px;text-align:center;font-size:18px;}
+#tip{
+    display: none;
+    width:100%;
+    text-align: center;
+    position:fixed;
+    left:0;
+    top:20%;
+    margin-top:-75px;
+    z-index:1000;
+}
+#house-image{
+    display:none;
 
+}
 .mask{width:100%;height:100%;position:fixed;left:0;top:0;background-color:#000;opacity:0.3;z-index:999;}
