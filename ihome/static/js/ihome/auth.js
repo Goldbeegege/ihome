@@ -17,16 +17,7 @@ $(function(){
         success:function(ret){
             if (!ret.error){
                 if (ret.data){
-                    let realNameTag = $("<p id='real-name' class='form-control-static' style='display: inline-block;margin-left:10px;'></p>");
-                    let idCardTag = $("<p id='id-card' class='form-control-static' style='display: inline-block;margin-left:10px;'></p>");
-                    realNameTag.html(ret.data.real_name);
-                    idCardTag.html(ret.data.id_card);
-                    $("#real-name").remove();
-                    $("#id-card").remove();
-                    $("label[for='id-card']").append(idCardTag);
-                    $("label[for='real-name']").append(realNameTag);
-                    $("#save").remove();
-                    $("#error-msg").remove();
+                    handleResult(ret)
                 }
             }
         }
@@ -53,9 +44,24 @@ $(function(){
                         $("#id-card-err").show().children("span").html(ret.error);
                     }
                     $("#"+ret.msg+"-err").show().children("span").html(ret.error);
+                }else{
+                    handleResult(ret)
                 }
             }
         });
    })
 });
+
+function handleResult(ret){
+    let realNameTag = $("<p id='real-name' class='form-control-static' style='display: inline-block;margin-left:10px;'></p>");
+    let idCardTag = $("<p id='id-card' class='form-control-static' style='display: inline-block;margin-left:10px;'></p>");
+    realNameTag.html(ret.data.real_name);
+    idCardTag.html(ret.data.id_card);
+    $("#real-name").remove();
+    $("#id-card").remove();
+    $("label[for='id-card']").append(idCardTag);
+    $("label[for='real-name']").append(realNameTag);
+    $("#save").remove();
+    $("#error-msg").remove();
+}
 

@@ -376,7 +376,7 @@ def auth():
             user.id_card = id_card
             db.session.commit()
             session["is_auth"] = True
-            return jsonify(error="",msg=1)
+            return jsonify(error="",msg=1,data={"real_name":real_name,"id_card":id_card})
         return jsonify(error="实名认证成功，不予许随意改动")
     return jsonify(error="数据异常，请稍后再试",msg=0)
 
@@ -391,8 +391,7 @@ def init_auth():
         return jsonify(error="数据库错误",msg=0)
     else:
         if user_auth:
-            data = json.loads(user_auth)
-            return jsonify(error="",msg=1,data =data)
+            return '{"error":"","msg":1,"data":%s}'%user_auth.decode(),200,{"Content-Type":"application/json"}
         try:
             user = models.User.query.filter_by(id=session["user_id"]).first()
         except Exception as e:
@@ -410,4 +409,4 @@ def init_auth():
                 except Exception as e:
                     current_app.logger.error(e)
                 ret["data"] = data
-            return json.dumps(ret)
+            return jsonify(**ret)

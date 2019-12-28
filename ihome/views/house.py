@@ -103,7 +103,7 @@ def public_new_house():
 @login_required
 def upload_house_image():
     if not session.get("is_auth"):
-        return jsonify(error="q请先进行实名认证",msg=0)
+        return jsonify(error="请先进行实名认证",msg=0)
     house_id = request.form.get('house_id')
     if not house_id:
         return jsonify(error="房源不存在",msg=0)
