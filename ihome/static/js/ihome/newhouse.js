@@ -9,10 +9,6 @@ $(document).ready(function(){
         url:"/area_info",
         success:function(ret){
             let data = ret.data;
-            // for(let area_id in data){
-            //     let option = $("<option value='" + data[area_id].id +"'>"+ data[area_id].name+"</option>");
-            //     $(option).appendTo("#area-id");
-            // }
             let temp = template("area_info",{area_li:data});
             $("#area-id").html(temp)
         }
@@ -39,7 +35,6 @@ $(document).ready(function(){
                 if (!ret.error){
                     $("#form-house-info").hide();
                     $("#form-house-image").show();
-                    $("#house-id").val(ret.data.house_id);
                 }else{
                     alert(ret.error)
                 }
@@ -62,6 +57,7 @@ $(document).ready(function(){
             url:"/upload_house_image",
             type:"post",
             data:formData,
+            ContentType:"application/json",
             headers:{
                 "X-CSRFtoken":getCookie("csrf_token")
             },
@@ -75,7 +71,8 @@ $(document).ready(function(){
                     },1000);
 
                 }else{
-                    alert(ret.error)
+                    $(".popup_con").fadeOut();
+                    alert(ret.error);
                 }
             },
             processData:false,

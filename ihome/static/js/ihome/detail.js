@@ -10,14 +10,37 @@ function decodeQuery(){
         return result;
     }, {});
 }
-
 $(document).ready(function(){
-    var mySwiper = new Swiper ('.swiper-container', {
-        loop: true,
-        autoplay: 2000,
-        autoplayDisableOnInteraction: false,
-        pagination: '.swiper-pagination',
-        paginationType: 'fraction'
-    })
-    $(".book-house").show();
-})
+    $.ajax({
+        url:"/get_house_image?house_id="+decodeQuery().id,
+        success:function(ret){
+            if(!ret.error){
+                let temp = template("silde-li",{urls:ret.data});
+                $(".swiper-wrapper").append(temp);
+                let mySwiper = new Swiper ('.swiper-container', {
+                    loop: true,
+                    autoplay: 2000,
+                    autoplayDisableOnInteraction: false,
+                    pagination: '.swiper-pagination',
+                    paginationType: 'fraction'
+                });
+            }
+        }
+    });
+    $.ajax({
+        url:"/public_house_info?house_id="+decodeQuery().id,
+        success:function(ret){
+            if (!ret.error){
+                if (ret.msg === 1){
+                    $(".book-house").hide();
+                }else{
+                    $(".book-house").show();
+                }
+                let priceTag = $("<div class='house-price'>￥<span>"+ret.data.price+"</span>/晚</div>");
+                $(".swiper-container").append(priceTag);
+                let temp = template("basic-info",{data:ret.data});
+                $(".house-info").before(temp)
+            }
+        }
+    });
+});

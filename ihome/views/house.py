@@ -4,21 +4,35 @@
 
 from . import api
 from ..utils.commons import login_required
-from flask import current_app,jsonify,request,session,make_response,Response
+from flask import current_app,jsonify,request,session,g
 from ihome import db
 from .. import models
 from ihome.views import constant
 import json
 from hashlib import md5
 import os
+import time
 
 @api.route("/my_house")
 @login_required
 def my_house():
-    if not session.get("mobile"):
-        return jsonify(error="没有设置手机号码",msg=0,code=100)
     if session.get("is_auth"):
-        return jsonify(error="",msg=1)
+        redis = current_app.config.get("SESSION_REDIS")
+        user_id = session["user_id"]
+        json_data = redis.get("house_info_%s"%user_id)
+        if json_data:
+            return '{"error":"","msg":"","data":%s}' % json_data.decode(), 200, {"Content-Type": "application/json"}
+        house_li  = []
+        houses =  models.House.query.filter_by(user_id = user_id).all()
+        for house in houses:
+            if house.index_image_url:
+                house_li.append(house.format_house_info())
+        house_data = json.dumps(house_li)
+        try:
+            redis.setex("house_info_%s"%user_id,30*60,house_data)
+        except Exception as e:
+            current_app.logger.error(e)
+        return '{"error":"","msg":"","data":%s}'%house_data,200,{"Content-Type":"application/json"}
     return jsonify(error="没有进行实名认证",msg=0)
 
 @api.route("/area_info")
@@ -51,7 +65,7 @@ def area_info():
 @login_required
 def public_new_house():
     if not session.get("is_auth"):
-        return jsonify(error="q请先进行实名认证",msg=0)
+        return jsonify(error="请先进行实名认证",msg=0)
     title = request.form.get("title")
     price = request.form.get("price")
     area_id = request.form.get("area_id")
@@ -67,8 +81,9 @@ def public_new_house():
 
     if not all([title,price,area_id,address,room_count,acreage,unit,capacity,beds,deposit,min_days,max_days]):
         return jsonify(error="请填写完房源的基本信息与详细信息 ",msg=0)
+    user_id = session["user_id"]
     house = models.House(
-        user_id = session["user_id"],
+        user_id = user_id,
         title = title,
         price = int(float(price)*100),
         area_id = area_id,
@@ -82,8 +97,7 @@ def public_new_house():
         min_days = min_days,
         max_days =max_days
     )
-
-    facility = request.form.get("facility")
+    facility = dict(request.form).get("facility[]")
     if facility:
         try:
             facility_li = models.Facility.query.filter(models.Facility.id.in_(facility)).all()
@@ -91,27 +105,26 @@ def public_new_house():
             current_app.logger.error(e)
             return jsonify(error="数据库错误",msg=0)
         house.facilities = facility_li
-    try:
-        db.session.add(house)
-        db.session.commit()
-    except Exception as e:
-        current_app.logger.error(e)
-        db.session.rollback()
-    return jsonify(error="",msg=1,data={"house_id":house.id})
+    current_app.house = house
+    return jsonify(error="",msg=1)
 
 @api.route("/upload_house_image",methods=["POST"])
 @login_required
 def upload_house_image():
     if not session.get("is_auth"):
         return jsonify(error="请先进行实名认证",msg=0)
-    house_id = request.form.get('house_id')
-    if not house_id:
-        return jsonify(error="房源不存在",msg=0)
     try:
-        house = models.House.query.filter_by(user_id=session["user_id"],id=house_id)
+        house = current_app.house
     except Exception as e:
         current_app.logger.error(e)
-        return jsonify(error="身份信息不匹配",msg=0)
+        return jsonify(error="请先完善房源信息",msg=0)
+    try:
+        db.session.add(house)
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(error="数据库错误",msg=0)
     image_li = request.files
     if not image_li:
         return jsonify(error="请上传图片", msg=0)
@@ -123,16 +136,61 @@ def upload_house_image():
         file_md5 = file_md5 +"."+ image.filename.rsplit(".",1)[1]
         base_dir = current_app.config.get("ROOT")
         if file_md5 not in os.listdir(os.path.join(base_dir)):
+            image.seek(0,0)
             image.save(os.path.join(base_dir,file_md5))
         if index == 0:
             house.index_image_url = file_md5
-        house_image = models.HouseImage(house_id=house_id,url=file_md5)
+        house_image = models.HouseImage(house_id=house.id,url=file_md5)
         db.session.add(house_image)
-
     try:
         db.session.commit()
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(e)
         return jsonify(error="数据库错误",msg=0)
-    return jsonify(error="",msg=1,data={"file_md5":""})
+    user_id = session.get('user_id')
+    redis = current_app.config.get("SESSION_REDIS")
+    house_info_cache = redis.get("house_info_%s"%user_id)
+    if house_info_cache:
+        data = json.loads(house_info_cache,encoding="utf-8")
+        data.append(house.format_house_info())
+        redis.setex("house_info_%s" % user_id,30*60,json.dumps(data))
+    return jsonify(error="",msg=1)
+
+@api.route("/get_house_image")
+def get_house_image():
+    house_id = request.args.get("house_id")
+    if not  house_id:
+        return jsonify(error="非法请求",msg=0)
+    images = models.HouseImage.query.filter_by(house_id=house_id).all()
+    images_li = []
+    for image in images:
+        images_li.append("/media?file_md5=" + image.url)
+    return jsonify(error="",msg=0,data=images_li)
+
+@api.route("/public_house_info")
+def public_house_info():
+    house_id = request.args.get("house_id")
+    if not house_id:
+        return jsonify(error="非法请求",msg=0)
+    user_id = session.get("user_id")
+    #用户未登录，成功返回状态码2
+    if not user_id:
+        try:
+            house = models.House.query.filter_by(id=house_id).first()
+        except Exception as e:
+            current_app.logger.error(e)
+            return jsonify(error="数据库错误",msg=0)
+        data = house.format_house_info()
+        return jsonify(error="",msg=2,data=data)
+    #用户已经登录，并且查询的是自己的房源
+    try:
+        house = models.House.query.filter_by(id=house_id).first()
+    except Exception as e:
+        return jsonify(error="数据库错误",msg=0)
+    ret = {"error": "", "msg":2}
+    if user_id == house.user_id:
+        ret["msg"] = 1
+    data = house.format_house_info()
+    ret["data"] = data
+    return jsonify(**ret)

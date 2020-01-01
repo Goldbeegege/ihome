@@ -70,6 +70,28 @@ class House(BaseModel,db.Model):
     images = db.relationship("HouseImage")  # 房屋的图片
     orders = db.relationship("Order", backref="house")  # 房屋的订单
 
+    def format_house_info(self):
+        return {
+            "house_id":self.id,
+            "house_lord":self.user.nick_name,
+            "area":self.area.name,
+            "title":self.title,
+            "price":int(self.price/100.00),
+            "address":self.address,
+            "room_count":self.room_count,
+            "acreage":self.acreage,
+            "unit":self.unit,
+            "capacity":self.capacity,
+            "beds":self.beds,
+            "deposit":int(self.deposit/100.00),
+            "min_days":self.min_days,
+            "max_days":self.max_days if int(self.max_days) != 0 else "无限制",
+            "update_time":self.create_time.strftime("%Y-%m-%d %H:%I"),
+            "index_image_url":"/media?file_md5="+self.index_image_url,
+            "landlord_pic":"/media?file_md5="+self.user.avatar_url if self.user.avatar_url else "/static/images/default.png",
+            "facilities":[{"name":f.name,"icon":f.icon} for f in self.facilities]
+        }
+
 class Facility(BaseModel, db.Model):
     """设施信息"""
 
@@ -77,6 +99,7 @@ class Facility(BaseModel, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)  # 设施编号
     name = db.Column(db.String(32), nullable=False)  # 设施名字
+    icon = db.Column(db.String(32),nullable=False) #设施在前端生成的样式
 
 
 class HouseImage(BaseModel, db.Model):

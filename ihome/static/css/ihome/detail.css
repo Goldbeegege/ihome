@@ -151,8 +151,12 @@ body {
     text-align: center;
     color: #000;
 }
-.house-info-list, .house-facility-list {
+.house-info-list{
     margin-top: 10px;
+}
+.house-facility-list {
+    margin-top: 10px;
+    text-align:center;
 }
 .house-info-list>li {
     height: 38px;
@@ -171,7 +175,7 @@ body {
     width: 50%;
     height: 39px;
     line-height: 39px;
-    padding-left: 12px;
+    /*padding-left: 12px;*/
     box-sizing: border-box;
     border-bottom: 1px solid #eee;
     color: #666;

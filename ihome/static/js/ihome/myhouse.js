@@ -7,7 +7,9 @@ $(document).ready(function(){
                 $("#houses-list").hide();
             }else{
                 $(".auth-warn").hide();
-                $(".new-house").show()
+                $(".new-house").show();
+                let temp = template("house-info",{houses:ret.data});
+                $("#houses-list").append(temp)
             }
         }
     });
