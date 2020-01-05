@@ -4,36 +4,42 @@
 
 from . import api
 from ..utils.commons import login_required
-from flask import current_app,jsonify,request,session,g
+from .. utils.pagination import XadminPagintor
+from flask import current_app,jsonify,request,session
 from ihome import db
 from .. import models
 from ihome.views import constant
 import json
 from hashlib import md5
 import os
-import time
 
 @api.route("/my_house")
 @login_required
 def my_house():
-    if session.get("is_auth"):
-        redis = current_app.config.get("SESSION_REDIS")
-        user_id = session["user_id"]
-        json_data = redis.get("house_info_%s"%user_id)
-        if json_data:
-            return '{"error":"","msg":"","data":%s}' % json_data.decode(), 200, {"Content-Type": "application/json"}
-        house_li  = []
-        houses =  models.House.query.filter_by(user_id = user_id).all()
-        for house in houses:
-            if house.index_image_url:
-                house_li.append(house.format_house_info())
-        house_data = json.dumps(house_li)
-        try:
-            redis.setex("house_info_%s"%user_id,30*60,house_data)
-        except Exception as e:
-            current_app.logger.error(e)
-        return '{"error":"","msg":"","data":%s}'%house_data,200,{"Content-Type":"application/json"}
-    return jsonify(error="没有进行实名认证",msg=0)
+    if not session.get("is_auth"):
+        return jsonify(error="没有进行实名认证", msg=0)
+    page = request.args.get("page",1)
+    user_id = session["user_id"]
+    total_length = models.House.query.filter_by(user_id=user_id).count()
+    data = {}
+    offset = 0
+    if total_length > constant.ITEM_PER_PAGE:
+        paginator = XadminPagintor(total_length=total_length,amount_per_page=constant.ITEM_PER_PAGE,display_pages=5,current_page=page)
+        pages = [i for i in paginator.page_num()]
+        offset = (paginator.current_page-1)*constant.ITEM_PER_PAGE
+        data["pages"] = pages
+        data["page_info"] = {"current_page":paginator.current_page,"start_page":pages[0],"end_page":pages[-1]}
+    house_li  = []
+    try:
+        houses =  models.House.query.filter_by(user_id = user_id).order_by(models.House.id.desc()).offset(offset).limit(constant.ITEM_PER_PAGE).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库错误",msg=0)
+    for house in houses:
+        if house.index_image_url:
+            house_li.append(house.format_house_info())
+    data["houses"] = house_li
+    return jsonify(error="",msg=1,data=data)
 
 @api.route("/area_info")
 @login_required
@@ -148,13 +154,6 @@ def upload_house_image():
         db.session.rollback()
         current_app.logger.error(e)
         return jsonify(error="数据库错误",msg=0)
-    user_id = session.get('user_id')
-    redis = current_app.config.get("SESSION_REDIS")
-    house_info_cache = redis.get("house_info_%s"%user_id)
-    if house_info_cache:
-        data = json.loads(house_info_cache,encoding="utf-8")
-        data.append(house.format_house_info())
-        redis.setex("house_info_%s" % user_id,30*60,json.dumps(data))
     return jsonify(error="",msg=1)
 
 @api.route("/get_house_image")
@@ -187,6 +186,7 @@ def public_house_info():
     try:
         house = models.House.query.filter_by(id=house_id).first()
     except Exception as e:
+        current_app.logger(e)
         return jsonify(error="数据库错误",msg=0)
     ret = {"error": "", "msg":2}
     if user_id == house.user_id:
@@ -194,3 +194,15 @@ def public_house_info():
     data = house.format_house_info()
     ret["data"] = data
     return jsonify(**ret)
+
+@api.route("/index")
+def index_info():
+    try:
+        houses = models.House.query.order_by(models.House.order_count.desc()).limit(5).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库错误",msg=0)
+    house_li = []
+    for house in houses:
+        house_li.append(house.format_house_info())
+    return jsonify(error="",msg=0,data=house_li)

@@ -296,13 +296,12 @@ def upload_avatar():
     return jsonify(error="", msg=1,data={"file_md5":file_md5})
 
 @api.route("/media")
-@login_required
 def media():
     file_md5 = request.args.get("file_md5")
     if not file_md5:
         file_md5 = session.get("file_md5")
         if not file_md5:
-            return jsonify(error="",msg=1)
+            return jsonify(error="非法请求",msg=0)
     base_dir = current_app.config.get("ROOT")
     if file_md5 in os.listdir(base_dir):
         with open(os.path.join(base_dir,file_md5),"rb") as f:

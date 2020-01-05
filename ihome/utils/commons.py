@@ -3,9 +3,8 @@
 # @Author: JinFeng 
 # @Date: 2019-12-10 20:29:20 
 import hashlib
-from flask import current_app,session,jsonify,request
+from flask import current_app,session,jsonify,redirect
 from functools import wraps
-from hashlib import md5
 
 def encryption(password):
     secret_key = current_app.config.get("SECRET_KEY")
@@ -18,5 +17,5 @@ def login_required(func):
     def wrapper(*args,**kwargs):
         if session.get("user_id"):
             return func(*args,**kwargs)
-        return jsonify(error="用户未登录",msg=0)
+        return jsonify(error="用户未登录",msg=302)
     return wrapper

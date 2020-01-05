@@ -25,21 +25,18 @@
         </div>
         <div class="swiper-container">
             <div class="swiper-wrapper">
-                <div class="swiper-slide">
-                    <a href="/detail?id=1"><img src="/static/images/home01.jpg"></a>
-                    <div class="slide-title">房屋标题1</div>
-                </div>
-                <div class="swiper-slide">
-                    <a href="/detail?id=2"><img src="/static/images/home02.jpg"></a>
-                    <div class="slide-title">房屋标题2</div>
-                </div>
-                <div class="swiper-slide">
-                    <a href="/detail?id=3"><img src="/static/images/home03.jpg"></a>
-                    <div class="slide-title">房屋标题3</div>
-                </div>
+
             </div>
             <div class="swiper-pagination"></div>
         </div>
+        <script type="text/html" id="slide-li">
+            {{ each houses as house }}
+            <div class="swiper-slide">
+                <a href="/detail?id={{ house.house_id }}"><img src="{{ house.index_image_url }}"></a>
+                <div class="slide-title">{{ house.title }}</div>
+            </div>
+            {{ /each }}
+        </script>
         <div class="search-bar">
             <button class="filter-btn" type="button" data-toggle="modal" data-target="#area-modal"><span class="fl" id="area-btn">选择城区</span><span class="fr"><i class="fa fa-map-marker fa-lg fa-fw"></i></span></button>
             <button class="filter-btn" type="button" data-toggle="modal" data-target="#start-date-modal"><span class="fl" id="start-date-btn">入住日期</span><span class="fr"><i class="fa fa-calendar fa-lg fa-fw"></i></span></button>

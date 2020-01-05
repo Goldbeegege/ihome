@@ -88,3 +88,6 @@ body {
 .auth-warn {
     display: none;
 }
+.pagination {
+    margin: 0;
+}

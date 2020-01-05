@@ -59,13 +59,26 @@ function goToSearchPage(th) {
 
 $(document).ready(function(){
     $(".top-bar>.register-login").show();
-    var mySwiper = new Swiper ('.swiper-container', {
-        loop: true,
-        autoplay: 2000,
-        autoplayDisableOnInteraction: false,
-        pagination: '.swiper-pagination',
-        paginationClickable: true
-    }); 
+    $.ajax({
+        url:"/index",
+        success:function(ret){
+
+            if (!ret.error){
+                console.log(ret.data);
+                let temp = template("slide-li",{houses:ret.data});
+                $(".swiper-wrapper").append(temp);
+                var mySwiper = new Swiper ('.swiper-container', {
+                    loop: true,
+                    autoplay: 2000,
+                    autoplayDisableOnInteraction: false,
+                    pagination: '.swiper-pagination',
+                    paginationClickable: true
+                });
+            }
+
+        }
+    });
+
     $(".area-list a").click(function(e){
         $("#area-btn").html($(this).html());
         $(".search-btn").attr("area-id", $(this).attr("area-id"));

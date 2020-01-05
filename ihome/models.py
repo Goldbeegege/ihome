@@ -86,7 +86,7 @@ class House(BaseModel,db.Model):
             "deposit":int(self.deposit/100.00),
             "min_days":self.min_days,
             "max_days":self.max_days if int(self.max_days) != 0 else "无限制",
-            "update_time":self.create_time.strftime("%Y-%m-%d %H:%I"),
+            "update_time":self.create_time.strftime("%Y-%m-%d %H:%M"),
             "index_image_url":"/media?file_md5="+self.index_image_url,
             "landlord_pic":"/media?file_md5="+self.user.avatar_url if self.user.avatar_url else "/static/images/default.png",
             "facilities":[{"name":f.name,"icon":f.icon} for f in self.facilities]
