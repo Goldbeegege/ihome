@@ -26,3 +26,6 @@ USERNAME_EXPIRE_TIME = 60*60*24*7
 
 #在展示自己发布的房源是，每页展示几条
 ITEM_PER_PAGE = 5
+
+#在搜索页面每页展示几条
+SEARCH_DISPLAY_ITEMS = 3

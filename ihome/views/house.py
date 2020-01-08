@@ -3,7 +3,7 @@
 # @date: 2019/12/24 16:38
 
 from . import api
-from ..utils.commons import login_required
+from ..utils.commons import login_required,format_date
 from .. utils.pagination import XadminPagintor
 from flask import current_app,jsonify,request,session
 from ihome import db
@@ -12,6 +12,7 @@ from ihome.views import constant
 import json
 from hashlib import md5
 import os
+from sqlalchemy import or_
 
 @api.route("/my_house")
 @login_required
@@ -31,18 +32,17 @@ def my_house():
         data["page_info"] = {"current_page":paginator.current_page,"start_page":pages[0],"end_page":pages[-1]}
     house_li  = []
     try:
-        houses =  models.House.query.filter_by(user_id = user_id).order_by(models.House.id.desc()).offset(offset).limit(constant.ITEM_PER_PAGE).all()
+        houses_data =  models.House.query.filter_by(user_id = user_id).order_by(models.House.id.desc()).offset(offset).limit(constant.ITEM_PER_PAGE).all()
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(error="数据库错误",msg=0)
-    for house in houses:
+    for house in houses_data:
         if house.index_image_url:
             house_li.append(house.format_house_info())
     data["houses"] = house_li
     return jsonify(error="",msg=1,data=data)
 
 @api.route("/area_info")
-@login_required
 def area_info():
     redis = current_app.config.get("SESSION_REDIS")
     try:
@@ -51,7 +51,7 @@ def area_info():
         current_app.logger.error(e)
         return jsonify(error="数据库错误",msg=0)
     if area_data:
-        return jsonify(error="",msg=1,data=json.loads(area_data))
+        return '{"error":"","msg":1,"data":%s}'%area_data.decode(),200,{"Content-Type":"application/json"}
     try:
         areas = models.District.query.all()
     except Exception as e:
@@ -206,3 +206,60 @@ def index_info():
     for house in houses:
         house_li.append(house.format_house_info())
     return jsonify(error="",msg=0,data=house_li)
+
+@api.route("/houses")
+def houses():
+    area_id = request.args.get("aid")
+    start_date = request.args.get("sd")
+    end_date = request.args.get("ed")
+    sort_key =  request.args.get("sk")
+    page = request.args.get("p",1)
+    params = []
+    try:
+        area_id = int(area_id)
+    except Exception as e:
+        current_app.logger.error(e)
+    else:
+        params.append(models.House.area_id == area_id)
+
+    start_date = format_date(start_date)
+    end_date = format_date(end_date)
+    if start_date and end_date:
+        assert start_date <= end_date,"非法时间格式"
+        orders = models.Order.query.filter(models.Order.begin_date <= end_date,models.Order.end_date>=start_date,or_(models.Order.status.in_(["WAIT_ACCEPT","WAIT_PAYMENT","PAID","WAIT_COMMENT","COMPLETE"])))
+    elif start_date and end_date is None:
+        orders = models.Order.query.filter(models.Order.begin_date <= start_date,models.Order.end_date>=start_date,or_(models.Order.status.in_(["WAIT_ACCEPT","WAIT_PAYMENT","PAID","WAIT_COMMENT","COMPLETE"])))
+    elif start_date is None and end_date:
+        orders = models.Order.query.filter(models.Order.begin_date <= end_date,models.Order.end_date>=end_date,or_(models.Order.status.in_(["WAIT_ACCEPT","WAIT_PAYMENT","PAID","WAIT_COMMENT","COMPLETE"])))
+    else:
+        orders = []
+    orders_li = [order.house_id for order in orders]
+    params.append(models.House.id.notin_(orders_li))
+    try:
+        current_page = int(page)
+    except Exception as e:
+        current_app.logger.error(e)
+        current_page = 1
+    try:
+        if sort_key == "booking":
+            paginator = models.House.query.filter(*params).order_by(models.House.order_count.desc()).paginate(page=current_page,per_page=constant.SEARCH_DISPLAY_ITEMS,error_out=False)
+        elif sort_key == "price-inc":
+            paginator = models.House.query.filter(*params).order_by(models.House.price.asc()).paginate(page=current_page,per_page=constant.SEARCH_DISPLAY_ITEMS,error_out=False)
+        elif sort_key == "price-des":
+            paginator = models.House.query.filter(*params).order_by(models.House.price.desc()).paginate(page=current_page,per_page=constant.SEARCH_DISPLAY_ITEMS,error_out=False)
+        else:
+            paginator = models.House.query.filter(*params).order_by(models.House.create_time.desc()).paginate(page=current_page,per_page=constant.SEARCH_DISPLAY_ITEMS,error_out=False)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(error="数据库错误",msg=0)
+    house_data = [house.format_house_info() for house in paginator.items]
+    return jsonify(error="",msg=1,data={"total_page":paginator.pages,"houses":house_data})
+
+@api.route("/comments")
+def comments():
+    house_id = request.args.get("house_id")
+    if not  house_id:
+        return jsonify(error="非法请求",msg=0)
+    orders = models.Order.query.filter_by(house_id=house_id).all()
+    order_data = [order.to_dict() for order in orders]
+    return jsonify(error="",msg=0,data=order_data)

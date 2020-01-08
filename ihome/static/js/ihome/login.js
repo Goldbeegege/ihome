@@ -49,6 +49,12 @@ $("#btn-submit").click(function () {
                 $("#password-err").hide().children("span").html("")
                 $("#username-err").show().children("span").html(data["error"]);
             }else{
+                let param = location.search;
+                if(param){
+                    let url= param.replace("?","/").replace("&","?");
+                    location.href = url;
+                    return;
+                }
                 location.href="/"
             }
         }

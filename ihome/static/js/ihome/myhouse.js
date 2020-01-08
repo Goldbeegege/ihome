@@ -4,7 +4,7 @@ $(document).ready(function(){
         success:function(ret){
             if (ret.error){
                 if(ret.msg === 302){
-                    location.href="/login?url="
+                    location.href="/login?url=#myhouse"
                 }
                 $(".auth-warn").show();
                 $("#houses-list").hide();
@@ -57,6 +57,7 @@ $(document).ready(function(){
 
             }
         }
+        let that = this;
         $.ajax({
             url:"/my_house?page="+$(this).parent().attr("current_page"),
             success:function(ret){
@@ -76,7 +77,7 @@ $(document).ready(function(){
                         }
                     })
                 }else if(ret.msg===302){
-                    location.href="/login"
+                    location.href="/login?my_house&page="+$(this).parent().attr("current_page")
                 }
 
             }

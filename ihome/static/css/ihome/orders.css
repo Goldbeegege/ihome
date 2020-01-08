@@ -34,10 +34,10 @@ body {
     min-height: 100%;
     margin-top: 38px;
 }
-.orders-list {
+.orders-list,.completed-orders-list {
     padding: 10px;
 }
-.orders-list>li {
+.orders-list>li ,.completed-orders-list>li{
     font-size: 14px;
     margin-bottom: 10px;
 }
@@ -91,4 +91,14 @@ body {
 }
 .order-reject {
     margin-left: 10px;
+}
+#tip{
+    display: none;
+    width:100%;
+    text-align: center;
+    position:fixed;
+    left:0;
+    top:20%;
+    margin-top:-75px;
+    z-index:1000;
 }

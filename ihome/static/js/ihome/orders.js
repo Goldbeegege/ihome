@@ -21,4 +21,13 @@ $(document).ready(function(){
         var orderId = $(this).parents("li").attr("order-id");
         $(".modal-comment").attr("order-id", orderId);
     });
+    $.ajax({
+        url:"/order_info?type=0",
+        success:function(ret){
+            if(!ret.error){
+                let temp = template("orders-list-tmpl",{orders:ret.data});
+                $(".orders-list").append(temp)
+            }
+        }
+    })
 });

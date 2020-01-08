@@ -5,6 +5,7 @@
 import hashlib
 from flask import current_app,session,jsonify,redirect
 from functools import wraps
+import datetime
 
 def encryption(password):
     secret_key = current_app.config.get("SECRET_KEY")
@@ -19,3 +20,10 @@ def login_required(func):
             return func(*args,**kwargs)
         return jsonify(error="用户未登录",msg=302)
     return wrapper
+
+def format_date(d):
+    try:
+        ret = datetime.datetime.strptime(d, "%Y-%m-%d")
+    except Exception as e:
+        ret = None
+    return ret

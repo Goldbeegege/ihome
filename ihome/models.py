@@ -72,6 +72,7 @@ class House(BaseModel,db.Model):
 
     def format_house_info(self):
         return {
+            "order_count":self.order_count,
             "house_id":self.id,
             "house_lord":self.user.nick_name,
             "area":self.area.name,
@@ -137,3 +138,27 @@ class Order(BaseModel, db.Model):
         ),
         default="WAIT_ACCEPT", index=True)
     comment = db.Column(db.Text)  # 订单的评论信息或者拒单原因
+
+    def to_dict(self):
+        return {
+            "order_id":self.id,
+            "username":self.user.nick_name,
+            "comment_time":self.create_time,
+            "begin_date":self.begin_date.strftime("%Y-%m-%d"),
+            "end_date":self.end_date.strftime("%Y-%m-%d"),
+            "days":self.days,
+            "house_price":self.house_price,
+            "amount":self.amount,
+            "status":self.status,
+            "comment":self.comment_handler(),
+            "img_url":"/media?file_md5="+self.house.index_image_url,
+            "title":self.house.title,
+            "ctime":self.create_time.strftime("%Y-%m-%d %H:%M")
+        }
+
+    def comment_handler(self):
+        if not self.comment:
+            return  self.comment
+        if len(self.comment) > 10:
+            return "<a href = 'javascript:;' comment-id='%s'>查看详情</a>"%self.id
+        return self.comment

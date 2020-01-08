@@ -43,4 +43,14 @@ $(document).ready(function(){
             }
         }
     });
+    $.ajax({
+        url:"/comments?house_id="+decodeQuery().id,
+        success:function(ret){
+            if(ret.data){
+                let temp = template("comment-list",{orders:ret.data});
+                $(".house-comment-list").append(temp)
+            }
+        }
+    });
+    $(".book-house").attr("href","/booking?house_id="+decodeQuery().id)
 });
