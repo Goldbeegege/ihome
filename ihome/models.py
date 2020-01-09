@@ -126,6 +126,7 @@ class Order(BaseModel, db.Model):
     days = db.Column(db.Integer, nullable=False)  # 预订的总天数
     house_price = db.Column(db.Integer, nullable=False)  # 房屋的单价
     amount = db.Column(db.Integer, nullable=False)  # 订单的总金额
+    trade_no = db.Column(db.String(80))
     status = db.Column(  # 订单的状态
         db.Enum(
             "WAIT_ACCEPT",  # 待接单,
@@ -141,6 +142,7 @@ class Order(BaseModel, db.Model):
 
     def to_dict(self):
         return {
+            "house_id":self.house_id,
             "order_id":self.id,
             "username":self.user.nick_name,
             "comment_time":self.create_time,

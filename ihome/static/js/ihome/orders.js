@@ -26,8 +26,25 @@ $(document).ready(function(){
         success:function(ret){
             if(!ret.error){
                 let temp = template("orders-list-tmpl",{orders:ret.data});
-                $(".orders-list").append(temp)
+                $(".orders-list").append(temp);
             }
         }
+    });
+    $(".orders-list").on("click","#wait-payment",function(){
+        $.ajax({
+            url:"/payment/"+$(this).attr("house_id")+"/" + $(this).attr("order-id"),
+            type:"put",
+            headers:{
+              "X-CSRFtoken":getCookie("csrf_token")
+            },
+            data:{},
+            success:function(ret){
+                if (!ret.error){
+                    location.href = ret.data.url
+                }else if(ret.msg === 302){
+                    location.href = "/login?orders"
+                }
+            }
+        })
     })
 });

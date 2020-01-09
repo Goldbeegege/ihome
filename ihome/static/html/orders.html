@@ -47,9 +47,11 @@
                                 <li>订单状态：
                                     <span style="color:blue;font-weight: bold;">
                                         {{if "WAIT_PAYMENT" == order.status}}
-                                        <a href="javascript:" id="wait-payment">待支付</a>
+                                        <a href="javascript:" id="wait-payment" order-id="{{ order.order_id }}" house_id={{ order.house_id }}>待支付</a>
                                         {{else if "PAID" == order.status}}
                                             已支付
+                                        {{else if "WAIT_ACCEPT" == order.status}}
+                                            待接单
                                         {{else if "CANCELED" == order.status}}
                                             已取消
                                         {{else if "WAIT_COMMENT" == order.status}}

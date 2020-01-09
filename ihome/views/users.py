@@ -248,7 +248,9 @@ def get_login_info():
 
 @api.route("/logout")
 def logout():
+    csrf_token = session.get("csrf_token")
     session.clear()
+    session["csrf_token"] = csrf_token
     return jsonify(error="",msg=1)
 
 @api.route("/my_info")
