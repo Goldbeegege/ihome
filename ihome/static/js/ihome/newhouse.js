@@ -27,7 +27,8 @@ $(document).ready(function(){
         $.ajax({
             url:"/public_new_house",
             type:"post",
-            data:data,
+            data:JSON.stringify(data),
+            contentType:"application/json",
             headers:{
                 "X-CSRFtoken":getCookie("csrf_token")
             },
@@ -57,7 +58,6 @@ $(document).ready(function(){
             url:"/upload_house_image",
             type:"post",
             data:formData,
-            ContentType:"application/json",
             headers:{
                 "X-CSRFtoken":getCookie("csrf_token")
             },

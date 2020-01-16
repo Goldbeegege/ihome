@@ -14,6 +14,7 @@ from hashlib import md5
 import os
 from sqlalchemy import or_
 
+
 @api.route("/my_house")
 @login_required
 def my_house():
@@ -103,7 +104,7 @@ def public_new_house():
         min_days = min_days,
         max_days =max_days
     )
-    facility = dict(request.form).get("facility[]")
+    facility = request.form.getlist("facility[]")
     if facility:
         try:
             facility_li = models.Facility.query.filter(models.Facility.id.in_(facility)).all()
